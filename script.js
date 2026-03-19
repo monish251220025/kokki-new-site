@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const ANALYTICS_MEASUREMENT_ID = (document.querySelector('meta[name="ga4-measurement-id"]')?.content || '').trim();
     const ANALYTICS_ALLOWED_HOSTS = ['kokkiusa.com', 'www.kokkiusa.com'];
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const prefersReducedMotion = reduceMotionQuery.matches;
+    const isCoarsePointer = coarsePointerQuery.matches;
+    const prefersReducedData = Boolean(connection?.saveData) || /(^|\b)(slow-2g|2g)\b/i.test(connection?.effectiveType || '');
 
     function updateViewportUnit() {
         const vh = window.innerHeight * 0.01;
@@ -45,21 +51,94 @@ document.addEventListener('DOMContentLoaded', () => {
         holder?.classList.add('video-fallback-active');
     }
 
+    function isElementInViewport(element) {
+        if (!element) return false;
+        const rect = element.getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < window.innerHeight;
+    }
+
+    function attemptAmbientPlay(video) {
+        if (!video || prefersReducedMotion || prefersReducedData || !isElementInViewport(video)) return;
+        video.play().catch(() => {
+            if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+                markVideoFallback(video);
+            }
+        });
+    }
+
+    // ── MOBILE NAV ──
+    const navToggle = document.querySelector('.nav-toggle');
+    const mobileNavPanel = document.getElementById('mobileNavPanel');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-links a');
+
+    function closeMobileNav() {
+        if (!navToggle || !mobileNavPanel) return;
+        document.body.classList.remove('nav-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        mobileNavPanel.hidden = true;
+    }
+
+    function openMobileNav() {
+        if (!navToggle || !mobileNavPanel) return;
+        document.body.classList.add('nav-open');
+        mobileNavPanel.hidden = false;
+        navToggle.setAttribute('aria-expanded', 'true');
+    }
+
+    navToggle?.addEventListener('click', () => {
+        const isOpen = navToggle.getAttribute('aria-expanded') === 'true';
+        if (isOpen) closeMobileNav();
+        else openMobileNav();
+    });
+
+    mobileNavLinks.forEach((link) => {
+        link.addEventListener('click', () => closeMobileNav());
+    });
+
+    mobileNavPanel?.addEventListener('click', (event) => {
+        if (event.target === mobileNavPanel) closeMobileNav();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeMobileNav();
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 1140) closeMobileNav();
+    }, { passive: true });
+
     // ── SECTION HEADER VIDEOS ──
-    document.querySelectorAll('.section-header-video, .section-bg-video, .cap-media-video').forEach((video) => {
+    const ambientVideos = Array.from(document.querySelectorAll('.section-header-video, .section-bg-video, .cap-media-video'));
+
+    function prepareVideo(video) {
         video.muted = true;
         video.loop = true;
-        video.autoplay = true;
+        video.autoplay = !prefersReducedMotion && !prefersReducedData;
         video.playsInline = true;
+        video.preload = prefersReducedData ? 'none' : (video.preload || 'metadata');
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
         video.addEventListener('error', () => markVideoFallback(video));
-        video.play().catch(() => markVideoFallback(video));
+        video.addEventListener('loadeddata', () => {
+            video.classList.remove('is-fallback');
+            video.closest('.section-bg-video-wrap, .cap-media, .hero-video-stack')?.classList.remove('video-fallback-active');
+        });
+    }
+
+    ambientVideos.forEach((video) => {
+        prepareVideo(video);
+        if (prefersReducedMotion || prefersReducedData) {
+            video.pause();
+            return;
+        }
+        if (!('IntersectionObserver' in window)) {
+            attemptAmbientPlay(video);
+        }
     });
 
     // ── NAV ──
     const nav      = document.querySelector('.site-nav');
-    const navLinks = document.querySelectorAll('.nav-links a');
+    const navLinks = document.querySelectorAll('.nav-links a, .mobile-nav-links a');
     const sections = document.querySelectorAll('main section[id]');
 
     // ── HERO VIDEO ──
@@ -67,10 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroTextBlocks = document.querySelectorAll('.hero-copy-block');
     const heroVideos = [
         {
-              mp4: 'https://github.com/monish251220025/kokki-new-site/releases/download/v1.0-videos/machining-web.mp4'
+              mp4: 'media/videos/machining-web.mp4'
         },
         {
-              mp4: 'https://github.com/monish251220025/kokki-new-site/releases/download/v1.0-videos/die-casting-web.mp4'
+              mp4: 'media/videos/die-casting-web.mp4'
         }
     ];
     let heroVideoIndex = 0;
@@ -96,6 +175,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadHeroVideo(index) {
         if (!heroVideo) return;
+        if (prefersReducedMotion || prefersReducedData) {
+            markVideoFallback(heroVideo);
+            return;
+        }
         const source = resolvePlayableSource(heroVideos[index]);
         if (!source) {
             markVideoFallback(heroVideo);
@@ -111,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (heroVideo) {
         heroVideo.muted       = true;
         heroVideo.playsInline = true;
+        heroVideo.preload = prefersReducedData ? 'metadata' : 'auto';
         heroVideo.setAttribute('webkit-playsinline', '');
         heroVideo.addEventListener('error', () => {
             heroVideoIndex = (heroVideoIndex + 1) % heroVideos.length;
@@ -167,9 +251,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ── REDUCED MOTION CHECK ──
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
     const enablePointerFx = !prefersReducedMotion && !isCoarsePointer;
+
+    if (!prefersReducedMotion && !prefersReducedData && 'IntersectionObserver' in window) {
+        const videoObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                const video = entry.target;
+                if (!(video instanceof HTMLVideoElement)) return;
+                if (entry.isIntersecting) {
+                    attemptAmbientPlay(video);
+                } else {
+                    video.pause();
+                }
+            });
+        }, { threshold: 0.2, rootMargin: '120px 0px 120px 0px' });
+
+        ambientVideos.forEach((video) => videoObserver.observe(video));
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            heroVideo?.pause();
+            ambientVideos.forEach((video) => video.pause());
+            return;
+        }
+        if (!prefersReducedMotion && !prefersReducedData) {
+            heroVideo?.play().catch(() => markVideoFallback(heroVideo));
+            ambientVideos.forEach((video) => attemptAmbientPlay(video));
+        }
+    });
 
     // ── ORANGE PIXEL CURSOR TRAIL ──
     let pixelTick = 0;

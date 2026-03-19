@@ -11,7 +11,8 @@ media/videos/*.mp4
 media/videos/*.mov
 Videos & Photos/Videos/*.mov
 
-# Large video files (handle separately)
-media/videos/*.mp4
-media/videos/*.mov
-Videos & Photos/Videos/*.mov
+!media/videos/cmm-inspection-web.mp4
+!media/videos/die-casting-web.mp4
+!media/videos/how-it-works-web.mp4
+!media/videos/machining-web.mp4
+!media/videos/on-site-engineer-web.mp4

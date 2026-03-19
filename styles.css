@@ -88,6 +88,29 @@ body {
     transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
 }
 .site-nav.scrolled { background: rgba(12,12,12,0.96); border-color: var(--border-hi); }
+.nav-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border);
+    background: rgba(12,12,12,0.88);
+    color: var(--off-white);
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-direction: column;
+    cursor: pointer;
+}
+.nav-toggle span {
+    width: 16px;
+    height: 1px;
+    background: currentColor;
+    transition: transform 0.24s var(--ease), opacity 0.24s var(--ease);
+}
+body.nav-open .nav-toggle span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+body.nav-open .nav-toggle span:nth-child(2) { opacity: 0; }
+body.nav-open .nav-toggle span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
 .logo {
     color: var(--white); text-decoration: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -114,6 +137,58 @@ body {
     transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 .nav-cta:hover { background: var(--orange); border-color: var(--orange); }
+.mobile-nav-panel {
+    position: fixed;
+    inset: 54px 0 0;
+    z-index: 1390;
+    background: rgba(5, 5, 5, 0.78);
+    backdrop-filter: blur(12px);
+}
+.mobile-nav-shell {
+    width: min(100%, 520px);
+    margin-left: auto;
+    padding: 20px 18px 24px;
+    border-left: 1px solid rgba(240,237,230,0.12);
+    border-bottom: 1px solid rgba(240,237,230,0.12);
+    background: linear-gradient(180deg, rgba(12,12,12,0.96), rgba(8,8,8,0.98));
+    box-shadow: -24px 24px 48px rgba(0,0,0,0.35);
+}
+.mobile-nav-links {
+    list-style: none;
+    display: grid;
+    gap: 8px;
+}
+.mobile-nav-links a,
+.mobile-nav-cta {
+    display: block;
+    text-decoration: none;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.mobile-nav-links a {
+    padding: 14px 16px;
+    border: 1px solid rgba(240,237,230,0.12);
+    background: rgba(240,237,230,0.03);
+    color: var(--off-white);
+    font-size: 0.76rem;
+}
+.mobile-nav-links a.is-active {
+    color: var(--black);
+    background: var(--orange);
+    border-color: var(--orange);
+}
+.mobile-nav-cta {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--orange);
+    background: var(--orange);
+    color: var(--black);
+    font-size: 0.76rem;
+}
+body.nav-open {
+    overflow: hidden;
+}
 
 /* ============================================================
    HERO
@@ -192,6 +267,23 @@ body {
     transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 .scroll-hint:hover { color: var(--orange); border-color: var(--orange); }
+
+@supports not (backdrop-filter: blur(10px)) {
+    .site-nav,
+    .mobile-nav-panel,
+    .section-header.has-bg-video .container,
+    #overview .how-text,
+    #capabilities .feature-card,
+    #capabilities .cap-hud,
+    #projects .project-left,
+    #projects .dropdown,
+    #why-kokki .why-panel .container,
+    #why-kokki .why-explain,
+    #founder .founder-block {
+        backdrop-filter: none;
+        background: rgba(12,12,12,0.94);
+    }
+}
 
 /* ============================================================
    SECTION BASE
@@ -1674,7 +1766,9 @@ main { counter-reset: section-num; }
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1140px) {
-    .nav-links { display: none; }
+    .nav-links,
+    .nav-cta { display: none; }
+    .nav-toggle { display: inline-flex; }
     .how-layout, .cap-layout, .project-layout, .why-layout, .founder-grid { grid-template-columns: 1fr; }
     .how-text.right { text-align: left; }
     .how-connector { display: none; }
@@ -1746,8 +1840,20 @@ main { counter-reset: section-num; }
 @media (max-width: 780px) {
     .site-nav { padding: 0 16px; }
     .container { width: min(1260px, calc(100% - 28px)); }
+    .mobile-nav-shell {
+        width: 100%;
+        margin-left: 0;
+        border-left: none;
+    }
+    .hero-panel {
+        padding-bottom: 88px;
+    }
     .hero-headline { font-size: clamp(1.9rem,9vw,3rem); }
+    .hero-copy-sequence { gap: 8px; }
+    .hero-copy-block { font-size: 0.92rem; padding: 12px 13px; }
     .hero-actions { flex-direction: column; align-items: center; }
+    .hero-actions .btn { width: 100%; justify-content: center; }
+    .scroll-hint { bottom: 16px; }
     .how-text, .project-left, .why-panel .container, .contact-container { padding: 18px; }
     .founder-layout {
         padding-top: 86px;
