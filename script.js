@@ -67,14 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroTextBlocks = document.querySelectorAll('.hero-copy-block');
     const heroVideos = [
         {
-            mp4: 'media/videos/machining.mp4',
-            m4v: 'media/videos/machining.m4v',
-            mov: 'media/videos/machining.mov'
+              mp4: 'https://github.com/monish251220025/kokki-new-site/releases/download/v1.0-videos/machining-web.mp4'
         },
         {
-            mp4: 'media/videos/die-casting.mp4',
-            m4v: 'media/videos/die-casting.m4v',
-            mov: 'media/videos/die-casting.mov'
+              mp4: 'https://github.com/monish251220025/kokki-new-site/releases/download/v1.0-videos/die-casting-web.mp4'
         }
     ];
     let heroVideoIndex = 0;
