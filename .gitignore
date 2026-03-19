@@ -5,3 +5,8 @@ yarn-debug.log*
 yarn-error.log*
 .env
 .env.*
+
+# Large video files (handle separately)
+media/videos/*.mp4
+media/videos/*.mov
+Videos & Photos/Videos/*.mov
