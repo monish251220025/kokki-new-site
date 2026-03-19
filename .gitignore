@@ -10,3 +10,8 @@ yarn-error.log*
 media/videos/*.mp4
 media/videos/*.mov
 Videos & Photos/Videos/*.mov
+
+# Large video files (handle separately)
+media/videos/*.mp4
+media/videos/*.mov
+Videos & Photos/Videos/*.mov
